@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app.validate_email import clean_email, is_valid_email
+from app.validator import clean_email, is_valid_email
+
 
 routes = Blueprint('routes', __name__)
 
