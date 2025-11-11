@@ -1,27 +1,36 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify
+
+print("routes.py se está ejecutando correctamente")
+
+routes = Blueprint("routes", __name__)
+
+@routes.route("/test", methods=["GET"])
+def test():
+    return jsonify({"mensaje": "✅ Endpoint de prueba funcionando correctamente"})
+
+from flask import request
 from app.validator import clean_email, is_valid_email
 
+@routes.route("/validate-emails", methods=["POST"])
+def validate_emails():
+    data = request.get_json()
+    emails = data.get("emails", [])
 
-routes = Blueprint('routes', __name__)
+    resultados = []
+    for email in emails:
+        limpio = clean_email(email)
+        valido = is_valid_email(limpio)
+        resultados.append({
+            "original": email,
+            "limpio": limpio,
+            "valido": valido
+        })
 
-# Ruta raíz para verificar que la API está activa
-@routes.route('/')
-def home():
-    return "API funcionando correctamente en Render 🚀"
+    return {"resultados": resultados}
 
-# Endpoint para limpiar y validar emails
-@routes.route('/clean-emails', methods=['POST'])
+@bp.route('/clean-emails', methods=['POST'])
 def clean_emails():
     data = request.get_json()
     emails = data.get('emails', [])
-    cleaned = []
-
-    for email in emails:
-        cleaned_email = clean_email(email)
-        cleaned.append({
-            "original": email,
-            "cleaned": cleaned_email,
-            "valid": is_valid_email(cleaned_email)  # ✅ Usamos el email limpio para validar
-        })
-
-    return jsonify({"results": cleaned})
+    cleaned = [email for email in emails if is_valid_email(email)]
+    return jsonify({"clean_emails": cleaned})
