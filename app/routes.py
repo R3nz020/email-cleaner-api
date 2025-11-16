@@ -1,36 +1,39 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, request, jsonify
+from app.validator import clean_and_validate_emails, extract_domain
 
-print("routes.py se está ejecutando correctamente")
-
-routes = Blueprint("routes", __name__)
-
-@routes.route("/test", methods=["GET"])
-def test():
-    return jsonify({"mensaje": "✅ Endpoint de prueba funcionando correctamente"})
-
-from flask import request
-from app.validator import clean_email, is_valid_email
+routes = Blueprint('routes', __name__)
 
 @routes.route("/validate-emails", methods=["POST"])
 def validate_emails():
     data = request.get_json()
     emails = data.get("emails", [])
 
+    cleaned, invalid = clean_and_validate_emails(emails)
+
     resultados = []
     for email in emails:
-        limpio = clean_email(email)
-        valido = is_valid_email(limpio)
+        limpio = email.strip().lower().replace('\u200b', '').replace(' ', '')
+        valido = email in cleaned
         resultados.append({
             "original": email,
             "limpio": limpio,
             "valido": valido
         })
 
-    return {"resultados": resultados}
+    return jsonify({"resultados": resultados})
 
-@bp.route('/clean-emails', methods=['POST'])
-def clean_emails():
-    data = request.get_json()
-    emails = data.get('emails', [])
-    cleaned = [email for email in emails if is_valid_email(email)]
-    return jsonify({"clean_emails": cleaned})
+@routes.route('/clean-emails', methods=['POST'])
+def clean_emails_endpoint():
+    try:
+        data = request.get_json(force=True)
+        emails = data.get('emails', [])
+        print(f"📩 Datos recibidos: {data}")
+        cleaned, invalid = clean_and_validate_emails(emails)
+        print(f"✅ Limpios: {cleaned} | ❌ Inválidos: {invalid}")
+        return jsonify({
+            'cleaned_emails': cleaned,
+            'invalid_emails': invalid
+        })
+    except Exception as e:
+        print(f"⚠️ Error en /clean-emails: {e}")
+        return jsonify({"error": str(e)}), 400
