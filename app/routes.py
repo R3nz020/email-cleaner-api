@@ -37,3 +37,22 @@ def clean_emails_endpoint():
     except Exception as e:
         print(f"⚠️ Error en /clean-emails: {e}")
         return jsonify({"error": str(e)}), 400
+
+@routes.route('/extract-domains', methods=['POST'])
+def extract_domains_endpoint():
+    try:
+        data = request.get_json(force=True)
+        emails = data.get('emails', [])
+        print(f"📩 Datos recibidos en /extract-domains: {emails}")
+
+        domains = set()
+        for email in emails:
+            domain = extract_domain(email)
+            if domain:
+                domains.add(domain)
+
+        print(f"🌐 Dominios únicos: {domains}")
+        return jsonify({'unique_domains': sorted(list(domains))})
+    except Exception as e:
+        print(f"⚠️ Error en /extract-domains: {e}")
+        return jsonify({"error": str(e)}), 400  
